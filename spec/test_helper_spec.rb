@@ -36,6 +36,13 @@ describe 'test fixture loading' do
 
       FrozenRecord::TestHelper.unload_fixtures
     end
+
+    it 'raises an error if the attributes are different in the test fixture' do
+      test_fixtures_base_path = File.join(File.dirname(__FILE__), 'fixtures', 'test_helper')
+      expect { FrozenRecord::TestHelper.load_fixture(City, test_fixtures_base_path) }.to(
+        raise_error(FrozenRecord::MissingAttributes)
+      )
+    end
   end
 
   describe '.unload_fixture' do

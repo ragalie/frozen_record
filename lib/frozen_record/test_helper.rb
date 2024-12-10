@@ -15,7 +15,7 @@ module FrozenRecord
         @cache[model_class] = base_path_if_file_present(model_class)
 
         model_class.base_path = alternate_base_path
-        model_class.load_records(force: true)
+        model_class.load_records(for_testing: true)
       end
 
       def unload_fixture(model_class)

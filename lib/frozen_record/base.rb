@@ -5,6 +5,7 @@ require 'frozen_record/backends'
 
 module FrozenRecord
   SlowQuery = Class.new(StandardError)
+  MissingAttributes = Class.new(StandardError)
 
   class << self
     attr_accessor :enforce_max_records_scan
@@ -185,8 +186,10 @@ module FrozenRecord
         undefine_attribute_methods
       end
 
-      def load_records(force: false)
-        if force || (auto_reloading && file_changed?)
+      def load_records(force: false, for_testing: false)
+        existing_attributes = @attributes
+
+        if force || for_testing || (auto_reloading && file_changed?)
           unload!
         end
 
@@ -196,6 +199,14 @@ module FrozenRecord
             records = records.map { |r| assign_defaults!(deserialize_attributes!(r.dup)).freeze }.freeze
           end
           @attributes = list_attributes(records).freeze
+
+          if for_testing && existing_attributes
+            missing_attributes = existing_attributes - @attributes
+            if missing_attributes.any?
+              raise MissingAttributes, "Attributes missing from test fixture: #{missing_attributes.inspect}"
+            end
+          end
+
           define_attribute_methods(@attributes.to_a)
           records = FrozenRecord.ignore_max_records_scan { records.map { |r| load(r) }.freeze }
           index_definitions.values.each { |index| index.build(records) }
